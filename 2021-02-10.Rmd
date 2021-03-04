@@ -13,7 +13,10 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Introduction
+
 libraries
+
 ```{r}
 library(tidyverse)
 library(DT)
@@ -24,7 +27,8 @@ missing_data <- readr::read_csv("https://raw.githubusercontent.com/VIS-SIG/Wonde
 missing_data %>% datatable()
 ```
 
-In order to think clearly, first, I want to drop pain.bin variables.
+In order to think **clearly**, first, I want to drop "*pain.bin"* variables.
+
 ```{r}
 data <- missing_data %>%
   select(-starts_with("pain.bin"))
@@ -32,6 +36,7 @@ data %>% datatable()
 ```
 
 better to use long format
+
 ```{r}
 data_long <- data %>%
   mutate(patient = 1:nrow(data)) %>%
@@ -46,7 +51,9 @@ data_long <- data %>%
 ```
 
 Lets look at the data as a heatmap.
+
 LOOK AT NA PATTERNS. DO THEY CONTINUE ONCE OCCURED OR RANDOM?
+
 ```{r}
 data_long %>% 
   #filter(patient<101) %>% 
@@ -56,6 +63,7 @@ data_long %>%
 ```
 
 patient_data
+
 ```{r}
 patient_data <- data_long %>%
   group_by(patient, gender, age, bmi, trt) %>%
@@ -64,6 +72,7 @@ patient_data <- data_long %>%
 ```
 
 average non-NA's by gender
+
 ```{r}
 patient_data %>%
   group_by(gender) %>%
@@ -71,6 +80,7 @@ patient_data %>%
 ```
 
 average non-NA's by age
+
 ```{r}
 patient_data %>%
   group_by(age) %>%
@@ -79,7 +89,9 @@ patient_data %>%
   geom_line(aes(y = mean)) +
   geom_col(aes(y = patientCount), fill = "red", alpha = 0.4)
 ```
+
 average NA's of below 55 and above 55
+
 ```{r}
 patient_data %>%
   mutate(naCount = 11 - sum) %>%
@@ -89,6 +101,7 @@ patient_data %>%
 ```
 
 distribution of NA's by ages
+
 ```{r}
 patient_data %>%
   mutate(naCount = 11 - sum) %>%
@@ -97,7 +110,9 @@ patient_data %>%
   ggplot(aes(x = age)) +
   geom_line(aes(y = naCount))
 ```
-lorenz 
+
+lorenz
+
 ```{r}
 patient_data %>%
   mutate(naCount = 11 - sum) %>% 
@@ -106,9 +121,8 @@ patient_data %>%
   ggplot()+geom_line(aes(x=age,y=cumsum))
 ```
 
-
-
 distribution of NA's by ages
+
 ```{r}
 patient_data %>%
   mutate(naCount = 11 - sum) %>%
@@ -121,6 +135,7 @@ patient_data %>%
 ```
 
 average non-NA's by bmi
+
 ```{r}
 patient_data %>%
   group_by(bmi) %>%
@@ -130,6 +145,7 @@ patient_data %>%
 ```
 
 average non-NA's by trt
+
 ```{r}
 patient_data %>%
   group_by(trt) %>%
@@ -138,11 +154,12 @@ patient_data %>%
 
 first thoughts;
 
-1. number of non-NA values for each patient histogram
-1. pain data by visit non-NA histogram
-1. arrange by trt to compare treatments
+1.  number of non-NA values for each patient histogram
+2.  pain data by visit non-NA histogram
+3.  arrange by trt to compare treatments
 
 number of non-NA values for each patient histogram
+
 ```{r}
 data_long %>%
   group_by(patient) %>%
@@ -157,6 +174,7 @@ data_long %>%
 ```
 
 pain data by visit non-NA histogram
+
 ```{r}
 patientCount <- data_long %>%
   group_by(patient) %>%
@@ -172,7 +190,9 @@ data_long %>%
   scale_x_discrete(name = "visit order") +
   scale_y_continuous(name = "number of NA's", limits = c(0, 1))
 ```
+
 arrange by trt to compare treatments
+
 ```{r}
 data_long %>%
   arrange(trt) %>%
