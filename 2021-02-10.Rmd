@@ -32,18 +32,61 @@ View(data)
 
 Lets look at the data as heatmap.
 ```{r}
-data_long<-data %>%  
-  mutate(patient=1:nrow(data)) %>% 
+data_long <- data %>%
+  mutate(patient = 1:nrow(data)) %>%
   pivot_longer(
     cols = starts_with("pain."),
     names_to = "visit",
-    names_prefix = "pain.",values_to = "pain",
+    names_prefix = "pain.",
+    values_to = "pain",
     values_drop_na = FALSE
-  ) %>% 
-  mutate(visit=as.integer(visit))
+  ) %>%
+  mutate(visit = as.integer(visit))
 
-data_long %>% ggplot(aes(x=visit,y=patient))+
-                geom_tile(aes(fill=pain))
+data_long %>% ggplot(aes(x = as.character(visit), y = patient)) +
+  geom_tile(aes(fill = pain)) +
+  scale_x_discrete(limits = as.character(seq(0, 10, by = 1)))
 ```
 
+first thoughts;
+
+1. number of non-NA values for each patient histogram
+1. pain data by visit non-NA histogram
+1. arrange by trt to compare treatments
+
+number of non-NA values for each patient histogram
+```{r}
+data_long %>%
+  group_by(patient) %>%
+  summarise(sum = sum(!is.na(pain))) %>%
+  group_by(sum) %>%
+  summarise(n = n()) %>%
+  arrange(sum) %>%
+  ggplot(aes(x = sum, y = n)) +
+  geom_col() +
+  scale_x_discrete(name = "number of non-NA's") +
+  scale_y_discrete(name = "number of patients")
+```
+
+pain data by visit non-NA histogram
+```{r}
+patientCount=data_long %>% group_by(patient) %>% summarise(n=n()) %>% nrow()
+
+data_long %>%
+  group_by(visit) %>%
+  summarise(sum = sum(!is.na(pain))) %>%
+  mutate(rate=sum/patientCount) %>% 
+  ggplot(aes(x = visit, y = rate)) +
+    geom_col() +
+    scale_x_discrete(name = "visit order") +
+    scale_y_continuous(name = "number of NA's",limits=c(0,1))
+```
+arrange by trt to compare treatments
+```{r}
+data_long %>% 
+  arrange(trt) %>% 
+  ggplot(aes(x = as.character(visit), y = patient)) +
+  geom_tile(aes(fill = pain)) +
+  scale_x_discrete(limits = as.character(seq(0, 10, by = 1)))
+```
 
