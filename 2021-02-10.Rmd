@@ -16,21 +16,22 @@ knitr::opts_chunk$set(
 libraries
 ```{r}
 library(tidyverse)
+library(DT)
 ```
 
 ```{r}
 missing_data <- readr::read_csv("https://raw.githubusercontent.com/VIS-SIG/Wonderful-Wednesdays/master/data/2021/2021-02-10/missing_data.csv")
-View(missing_data)
+missing_data %>% datatable()
 ```
 
 In order to think clearly, first, I want to drop pain.bin variables.
 ```{r}
 data <- missing_data %>%
   select(-starts_with("pain.bin"))
-View(data)
+data %>% datatable()
 ```
 
-Lets look at the data as heatmap.
+better to use long format
 ```{r}
 data_long <- data %>%
   mutate(patient = 1:nrow(data)) %>%
@@ -42,10 +43,97 @@ data_long <- data %>%
     values_drop_na = FALSE
   ) %>%
   mutate(visit = as.integer(visit))
+```
 
-data_long %>% ggplot(aes(x = as.character(visit), y = patient)) +
+Lets look at the data as a heatmap.
+LOOK AT NA PATTERNS. DO THEY CONTINUE ONCE OCCURED OR RANDOM?
+```{r}
+data_long %>% 
+  #filter(patient<101) %>% 
+  ggplot(aes(x = as.character(visit), y = patient)) +
   geom_tile(aes(fill = pain)) +
   scale_x_discrete(limits = as.character(seq(0, 10, by = 1)))
+```
+
+patient_data
+```{r}
+patient_data <- data_long %>%
+  group_by(patient, gender, age, bmi, trt) %>%
+  summarise(sum = sum(!is.na(pain))) %>%
+  ungroup()
+```
+
+average non-NA's by gender
+```{r}
+patient_data %>%
+  group_by(gender) %>%
+  summarise(mean = mean(sum))
+```
+
+average non-NA's by age
+```{r}
+patient_data %>%
+  group_by(age) %>%
+  summarise(mean = mean(sum), patientCount = n()) %>%
+  ggplot(aes(x = age)) +
+  geom_line(aes(y = mean)) +
+  geom_col(aes(y = patientCount), fill = "red", alpha = 0.4)
+```
+average NA's of below 55 and above 55
+```{r}
+patient_data %>%
+  mutate(naCount = 11 - sum) %>%
+  mutate(plus55=ifelse(age>55,"+55","<55")) %>% 
+  group_by(plus55) %>%
+  summarise(mean = mean(naCount))
+```
+
+distribution of NA's by ages
+```{r}
+patient_data %>%
+  mutate(naCount = 11 - sum) %>%
+  group_by(age) %>%
+  summarise(naCount = sum(naCount)) %>%
+  ggplot(aes(x = age)) +
+  geom_line(aes(y = naCount))
+```
+lorenz 
+```{r}
+patient_data %>%
+  mutate(naCount = 11 - sum) %>% 
+  arrange(age) %>% 
+  mutate(cumsum=cumsum(naCount)) %>% 
+  ggplot()+geom_line(aes(x=age,y=cumsum))
+```
+
+
+
+distribution of NA's by ages
+```{r}
+patient_data %>%
+  mutate(naCount = 11 - sum) %>%
+  mutate(plus55=ifelse(age>55,"+55","younger")) %>% 
+  group_by(plus55) %>%
+  summarise(naCount = sum(naCount)) %>%
+  mutate(x=1) %>% 
+  ggplot(aes(fill=plus55,x=x,y=naCount)) +
+  geom_col(position="fill", stat="identity")
+```
+
+average non-NA's by bmi
+```{r}
+patient_data %>%
+  group_by(bmi) %>%
+  summarise(mean = mean(sum)) %>%
+  ggplot(aes(x = bmi, y = mean)) +
+  geom_line()
+```
+
+average non-NA's by trt
+```{r}
+patient_data %>%
+  group_by(trt) %>%
+  summarise(mean = mean(sum))
 ```
 
 first thoughts;
@@ -70,23 +158,25 @@ data_long %>%
 
 pain data by visit non-NA histogram
 ```{r}
-patientCount=data_long %>% group_by(patient) %>% summarise(n=n()) %>% nrow()
+patientCount <- data_long %>%
+  group_by(patient) %>%
+  summarise(n = n()) %>%
+  nrow()
 
 data_long %>%
   group_by(visit) %>%
   summarise(sum = sum(!is.na(pain))) %>%
-  mutate(rate=sum/patientCount) %>% 
+  mutate(rate = sum / patientCount) %>%
   ggplot(aes(x = visit, y = rate)) +
-    geom_col() +
-    scale_x_discrete(name = "visit order") +
-    scale_y_continuous(name = "number of NA's",limits=c(0,1))
+  geom_col() +
+  scale_x_discrete(name = "visit order") +
+  scale_y_continuous(name = "number of NA's", limits = c(0, 1))
 ```
 arrange by trt to compare treatments
 ```{r}
-data_long %>% 
-  arrange(trt) %>% 
+data_long %>%
+  arrange(trt) %>%
   ggplot(aes(x = as.character(visit), y = patient)) +
   geom_tile(aes(fill = pain)) +
   scale_x_discrete(limits = as.character(seq(0, 10, by = 1)))
 ```
-
