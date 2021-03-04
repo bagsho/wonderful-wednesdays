@@ -7,9 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-	echo = TRUE,
-	message = FALSE,
-	warning = FALSE
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
 )
 ```
 
@@ -23,8 +23,27 @@ missing_data <- readr::read_csv("https://raw.githubusercontent.com/VIS-SIG/Wonde
 View(missing_data)
 ```
 
+In order to think clearly, first, I want to drop pain.bin variables.
 ```{r}
-missing_data<-missing_data %>% select(-starts_with("pain.bin")) %>% names
-
+data <- missing_data %>%
+  select(-starts_with("pain.bin"))
+View(data)
 ```
+
+Lets look at the data as heatmap.
+```{r}
+data_long<-data %>%  
+  mutate(patient=1:nrow(data)) %>% 
+  pivot_longer(
+    cols = starts_with("pain."),
+    names_to = "visit",
+    names_prefix = "pain.",values_to = "pain",
+    values_drop_na = FALSE
+  ) %>% 
+  mutate(visit=as.integer(visit))
+
+data_long %>% ggplot(aes(x=visit,y=patient))+
+                geom_tile(aes(fill=pain))
+```
+
 
