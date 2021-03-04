@@ -1,0 +1,30 @@
+---
+title: "Missing data"
+author: "Orhan"
+date: "04 03 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+libraries
+```{r}
+library(tidyverse)
+```
+
+```{r}
+missing_data <- readr::read_csv("https://raw.githubusercontent.com/VIS-SIG/Wonderful-Wednesdays/master/data/2021/2021-02-10/missing_data.csv")
+View(missing_data)
+```
+
+```{r}
+missing_data<-missing_data %>% select(-starts_with("pain.bin")) %>% names
+
+```
+
