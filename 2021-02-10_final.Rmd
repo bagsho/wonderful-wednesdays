@@ -13,14 +13,14 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Introduction
+
 
 libraries
 ```{r}
 library(tidyverse)
 ```
 
-data import
+import data
 ```{r}
 missing_data <- readr::read_csv("https://raw.githubusercontent.com/VIS-SIG/Wonderful-Wednesdays/master/data/2021/2021-02-10/missing_data.csv")
 missing_data %>% datatable()
@@ -81,7 +81,7 @@ hist<-data_long %>%
 
 save
 ```{r}
-png(file = "./outputs/2021-02-10_d.png", width = 3840, height = 2160, units = "px", res = 72*4)
+png(file = "./outputs/2021-02-10.png")
 hist
 dev.off()
 ```
