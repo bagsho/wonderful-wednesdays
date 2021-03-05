@@ -169,8 +169,82 @@ data_long %>%
   arrange(sum) %>%
   ggplot(aes(x = sum, y = n)) +
   geom_col() +
-  scale_x_discrete(name = "number of non-NA's") +
-  scale_y_discrete(name = "number of patients")
+  scale_x_discrete(name = "number of non-NA's",limits=c(0,11)) +
+  scale_y_discrete(name = "number of patients")+
+  coord_flip()
+```
+
+number of non-NA values for each patient histogram
+
+```{r}
+data_long %>%
+  mutate(plus55=ifelse(age>55,"+55","-55")) %>% 
+  group_by(patient,plus55) %>%
+  summarise(sum = sum(is.na(pain))) %>%
+  group_by(sum,plus55) %>%
+  summarise(n = n()) %>%
+  arrange(sum) %>%
+  ggplot(aes(x = sum, y = n)) +
+  geom_col() +
+  scale_x_discrete(name = "number of non-NA's",limits=c(0,11)) +
+  scale_y_discrete(name = "number of patients")+
+  coord_flip()
+```
+
+number of NA values for each patient histogram by age group
+
+```{r}
+data_long %>%
+  mutate(plus55=ifelse(age>55,"+55","-55")) %>% 
+  group_by(patient,plus55) %>%
+  summarise(sum = sum(is.na(pain))) %>%
+  group_by(sum,plus55) %>%
+  summarise(n = n()) %>% 
+  mutate(n=ifelse(plus55=="-55",n*-1,n)) %>% 
+  ungroup() %>% 
+  complete(sum,plus55) %>% 
+  mutate(n=replace_na(n,0)) %>% 
+  ggplot(aes(x=sum,y=n))+
+    geom_col(aes(group=plus55,fill=plus55)) + 
+    scale_fill_brewer(palette="Dark2")+
+    scale_x_continuous(breaks = seq(0, 11, 1))+
+    scale_y_continuous(breaks = seq(-200, 200, 50), 
+                     labels = abs(seq(-200, 200, 50)),
+                     limits = c(-200,200))+
+    coord_flip()+
+    labs(x = "Number of NA's", 
+         y = "Number of Patients", 
+         title = "Number of Patients by total number of NA's\nfor below 55 and above 55 age groups")+ 
+    theme_minimal()+
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.position = "none")+
+    annotate(geom="text", x=5, y=100, label="+55", colour="black",
+             size=15, family="Courier", fontface="bold",alpha=0.5)+
+    annotate(geom="text", x=5, y=-100, label="-55", colour="black",
+             size=15, family="Courier", fontface="bold",alpha=0.5)
+```
+
+number of NA values for each patient histogram by age group (without zero's)
+
+```{r}
+data_long %>%
+  mutate(plus55=ifelse(age>55,"+55","-55")) %>% 
+  group_by(patient,plus55) %>%
+  summarise(sum = sum(is.na(pain))) %>%
+  filter(sum>0) %>% 
+  group_by(sum,plus55) %>%
+  summarise(n = n()) %>% 
+  mutate(n=ifelse(plus55=="-55",n*-1,n)) %>% 
+  ungroup() %>% 
+  complete(sum,plus55) %>% 
+  mutate(n=replace_na(n,0)) %>% 
+  ggplot(aes(x=sum,y=n))+
+    coord_flip()+
+    geom_col(aes(group=plus55,fill=plus55)) + 
+    scale_x_continuous(breaks = seq(0, 11, 1))+
+    scale_y_continuous(breaks = seq(-30, 30, 10), 
+                     labels = abs(seq(-30, 30, 10)),
+                     limits = c(-30,30))
 ```
 
 pain data by visit non-NA histogram
@@ -183,7 +257,7 @@ patientCount <- data_long %>%
 
 data_long %>%
   group_by(visit) %>%
-  summarise(sum = sum(!is.na(pain))) %>%
+  summarise(sum = sum(is.na(pain))) %>%
   mutate(rate = sum / patientCount) %>%
   ggplot(aes(x = visit, y = rate)) +
   geom_col() +
